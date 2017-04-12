@@ -109,6 +109,12 @@ func (conf *YamlConf) LoadEnv(vault *Vault) error {
 		switch variable.Type {
 		case "string":
 			res[key] = value
+		case "int":
+			intValue, err := envStringToInt(value)
+			if err != nil {
+				return err
+			}
+			res[key] = intValue
 		case "bool":
 			boolValue, err := envStringToBool(value)
 			if err != nil {
@@ -163,6 +169,13 @@ func (conf *YamlConf) LoadVault(filename string, vault *Vault) error {
 				res[key] = value
 			default:
 				return fmt.Errorf("%s is not of type string", spew.Sdump(value))
+			}
+		case "int":
+			switch value.(type) {
+			case int:
+				res[key] = value
+			default:
+				return fmt.Errorf("%s is not of type int", spew.Sdump(value))
 			}
 		case "bool":
 			switch value.(type) {

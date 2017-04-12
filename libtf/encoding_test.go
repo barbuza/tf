@@ -7,6 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInt(t *testing.T) {
+	res1 := envIntToString(10)
+	assert.Equal(t, "10", res1)
+
+	res2, err2 := envStringToInt("10")
+	assert.Nil(t, err2)
+	assert.Equal(t, 10, res2)
+
+	_, err3 := envStringToInt("sdf")
+	assert.Error(t, err3)
+}
+
 func TestList(t *testing.T) {
 	res1 := envListToString([]string{"foo", "bar", "spam"})
 	assert.Equal(t, "foo,bar,spam", res1)

@@ -7,7 +7,16 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"gopkg.in/yaml.v2"
+	"strconv"
 )
+
+func envIntToString(input int) string {
+	return strconv.Itoa(input)
+}
+
+func envStringToInt(input string) (int, error) {
+	return strconv.Atoi(input)
+}
 
 func envDictToString(input map[string]interface{}) (string, error) {
 	data, err := yaml.Marshal(input)
@@ -66,6 +75,8 @@ func structToEnv(input map[string]interface{}) (map[string]string, error) {
 			res[key] = value.(string)
 		case bool:
 			res[key] = envBoolToString(value.(bool))
+		case int:
+			res[key] = envIntToString(value.(int))
 		case []string:
 			res[key] = envListToString(value.([]string))
 		case map[string]interface{}:

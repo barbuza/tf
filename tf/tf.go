@@ -195,6 +195,7 @@ func main() {
 			if target == flag.Arg(0) {
 				found = true
 				commandTerraform(conf, vault, target)
+				break
 			}
 		}
 		if !found {

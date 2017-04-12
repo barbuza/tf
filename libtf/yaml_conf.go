@@ -1,6 +1,7 @@
 package libtf
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"sort"
@@ -89,7 +90,7 @@ func LoadYamlConf(filename string, config *YamlConf) error {
 
 func (conf *YamlConf) Validate() error {
 	if len(conf.Global.BaseImage) == 0 {
-		return fmt.Errorf("global.base_image is not defined")
+		return errors.New("global.base_image is not defined")
 	}
 
 	for index, service := range conf.Services {
@@ -106,7 +107,7 @@ func (conf *YamlConf) Validate() error {
 
 	for name, variable := range conf.Env {
 		switch variable.Type {
-		case "string", "bool", "dict", "list":
+		case "string", "bool", "dict", "list", "int":
 		default:
 			return fmt.Errorf("env.%s.type is invalid", name)
 		}
