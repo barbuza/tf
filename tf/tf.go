@@ -13,12 +13,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/barbuza/tr/libtr"
+	"github.com/barbuza/tf/libtf"
 	"github.com/fatih/color"
 	"gopkg.in/yaml.v2"
 )
 
-func commandRunEnv(conf libtr.YamlConf, vault libtr.Vault) {
+func commandRunEnv(conf libtf.YamlConf, vault libtf.Vault) {
 	bin, err := exec.LookPath(flag.Arg(1))
 	if err != nil {
 		panic(err)
@@ -32,7 +32,7 @@ func commandRunEnv(conf libtr.YamlConf, vault libtr.Vault) {
 	syscall.Exec(bin, flag.Args()[1:], append(os.Environ(), env...))
 }
 
-func commandRun(conf libtr.YamlConf, vault libtr.Vault) {
+func commandRun(conf libtf.YamlConf, vault libtf.Vault) {
 	data, err := json.MarshalIndent(vault.Env, "", " ")
 	if err != nil {
 		panic(err)
@@ -45,7 +45,7 @@ func commandRun(conf libtr.YamlConf, vault libtr.Vault) {
 	syscall.Exec(bin, flag.Args()[1:], append(os.Environ(), env))
 }
 
-func commandDump(conf libtr.YamlConf, vault libtr.Vault) {
+func commandDump(conf libtf.YamlConf, vault libtf.Vault) {
 	data, err := json.MarshalIndent(vault.Env, "", "  ")
 	if err != nil {
 		panic(err)
@@ -53,7 +53,7 @@ func commandDump(conf libtr.YamlConf, vault libtr.Vault) {
 	io.Copy(os.Stdout, bytes.NewBuffer(data))
 }
 
-func commandCompose(conf libtr.YamlConf, vault libtr.Vault) {
+func commandCompose(conf libtf.YamlConf, vault libtf.Vault) {
 	data, err := yaml.Marshal(conf.AsCompose(vault))
 	if err != nil {
 		panic(err)
@@ -68,15 +68,15 @@ func commandCompose(conf libtr.YamlConf, vault libtr.Vault) {
 	syscall.Exec(bin, append([]string{"docker-compose", "-f", ".compose.yml"}, flag.Args()[1:]...), os.Environ())
 }
 
-func commandTerraform(conf libtr.YamlConf, vault libtr.Vault, target string) {
+func commandTerraform(conf libtf.YamlConf, vault libtf.Vault, target string) {
 	if err := os.Chdir(target); err != nil {
 		panic(err)
 	}
 
-	services := map[string][]libtr.EcsServiceConfig{}
+	services := map[string][]libtf.EcsServiceConfig{}
 	conf.AsEcs(vault, services)
 
-	if err := libtr.RimRaf(".ecs-def"); err != nil {
+	if err := libtf.RimRaf(".ecs-def"); err != nil {
 		panic(err)
 	}
 
@@ -110,11 +110,11 @@ func commandTerraform(conf libtr.YamlConf, vault libtr.Vault, target string) {
 		idx++
 	}
 	for service := range services {
-		env[idx] = fmt.Sprintf("%s=.ecs-def/%s.json", libtr.EnvKey(libtr.EcsTemplateVar(service)), service)
+		env[idx] = fmt.Sprintf("%s=.ecs-def/%s.json", libtf.EnvKey(libtf.EcsTemplateVar(service)), service)
 		idx++
 	}
 	for _, target := range conf.Targets {
-		env[idx] = fmt.Sprintf("%s=%s", libtr.EnvKey(libtr.StateKeyVar(target)), libtr.StateKey(vault.EnvName(), target))
+		env[idx] = fmt.Sprintf("%s=%s", libtf.EnvKey(libtf.StateKeyVar(target)), libtf.StateKey(vault.EnvName(), target))
 		idx++
 	}
 	env[idx] = "TF_INPUT=0"
@@ -122,18 +122,18 @@ func commandTerraform(conf libtr.YamlConf, vault libtr.Vault, target string) {
 	syscall.Exec(terraformBin, append([]string{"terraform"}, flag.Args()[1:]...), append(os.Environ(), env...))
 }
 
-func commandVariables(conf libtr.YamlConf, vault libtr.Vault) {
+func commandVariables(conf libtf.YamlConf, vault libtf.Vault) {
 	keys := []string{}
 
-	services := map[string][]libtr.EcsServiceConfig{}
+	services := map[string][]libtf.EcsServiceConfig{}
 	conf.AsEcs(vault, services)
 
 	for service := range services {
-		keys = append(keys, libtr.EcsTemplateVar(service))
+		keys = append(keys, libtf.EcsTemplateVar(service))
 	}
 
 	for _, target := range conf.Targets {
-		keys = append(keys, libtr.StateKeyVar(target))
+		keys = append(keys, libtf.StateKeyVar(target))
 	}
 
 	for key, variable := range conf.Env {
@@ -142,7 +142,7 @@ func commandVariables(conf libtr.YamlConf, vault libtr.Vault) {
 		}
 	}
 
-	sort.Sort(libtr.ByString(keys))
+	sort.Sort(libtf.ByString(keys))
 
 	for _, key := range keys {
 		fmt.Printf("variable \"%s\" {}\n", key)
@@ -150,21 +150,21 @@ func commandVariables(conf libtr.YamlConf, vault libtr.Vault) {
 }
 
 func main() {
-	configFile := flag.String("config", ".tr.yml", "")
+	configFile := flag.String("config", ".tf.yml", "")
 	vaultFile := flag.String("vault", "env", "")
 	flag.Parse()
 
-	conf := libtr.YamlConf{}
-	if err := libtr.LoadYamlConf(*configFile, &conf); err != nil {
+	conf := libtf.YamlConf{}
+	if err := libtf.LoadYamlConf(*configFile, &conf); err != nil {
 		panic(err)
 	}
 	if err := conf.Validate(); err != nil {
 		panic(err)
 	}
 
-	libtr.GetGitVersion()
+	libtf.GetGitVersion()
 
-	vault := libtr.Vault{}
+	vault := libtf.Vault{}
 	var err error
 	if *vaultFile == "env" {
 		err = conf.LoadEnv(&vault)
@@ -199,7 +199,7 @@ func main() {
 		}
 		if !found {
 			commands := strings.Join(append([]string{"run", "run-env", "dump", "compose"}, conf.Targets...), "|")
-			fmt.Printf("usage: tr -config=.tr.yml -vault=env|vault.yml %s\n", commands)
+			fmt.Printf("usage: tf -config=.tf.yml -vault=env|vault.yml %s\n", commands)
 			os.Exit(1)
 		}
 	}

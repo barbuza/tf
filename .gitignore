@@ -1,7 +1,7 @@
 /.idea
-/tr/ecs
-/tr/infra
-/tr/.tr.yml
-/tr/staging.yml
-/tr/.compose.yml
-/tr/tr
+/tf/ecs
+/tf/infra
+/tf/.tf.yml
+/tf/staging.yml
+/tf/.compose.yml
+/tf/tf
