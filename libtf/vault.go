@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/gtank/cryptopasta"
 	"gopkg.in/yaml.v2"
 )
 
@@ -139,12 +140,17 @@ func (conf *YamlConf) LoadEnv(vault *Vault) error {
 	return err
 }
 
-func (conf *YamlConf) LoadVault(filename string, vault *Vault) error {
-	data, err := ioutil.ReadFile(filename)
+func (vault *Vault) Encode(keyString string) ([]byte, error) {
+	data, err := yaml.Marshal(vault.Env)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	key := [32]byte{}
+	copy(key[:], keyString)
+	return cryptopasta.Encrypt(data, &key)
+}
 
+func (conf *YamlConf) loadYamlData(vault *Vault, data []byte) error {
 	decoded := map[string]interface{}{}
 	if err := yaml.Unmarshal(data, &decoded); err != nil {
 		return err
@@ -204,6 +210,29 @@ func (conf *YamlConf) LoadVault(filename string, vault *Vault) error {
 	}
 
 	vault.Env = res
+	var err error
 	vault.Raw, err = structToEnv(vault.Env)
 	return err
+}
+
+func (conf *YamlConf) LoadYamlFile(filename string, vault *Vault) error {
+	yamlBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	return conf.loadYamlData(vault, yamlBytes)
+}
+
+func (conf *YamlConf) LoadVault(filename string, vault *Vault) error {
+	aesBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	key := [32]byte{}
+	copy(key[:], conf.Keys[conf.Global.ProjectName])
+	yamlBytes, err := cryptopasta.Decrypt(aesBytes, &key)
+	if err != nil {
+		return err
+	}
+	return conf.loadYamlData(vault, yamlBytes)
 }

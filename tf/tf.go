@@ -15,6 +15,7 @@ import (
 
 	"github.com/barbuza/tf/libtf"
 	"github.com/fatih/color"
+	"github.com/kyokomi/emoji"
 	"gopkg.in/yaml.v2"
 )
 
@@ -149,6 +150,30 @@ func commandVariables(conf libtf.YamlConf, vault libtf.Vault) {
 	}
 }
 
+func commandEncrypt(conf libtf.YamlConf, vault libtf.Vault) {
+	output := flag.Arg(1)
+	data, err := vault.Encode(conf.Keys[conf.Global.ProjectName])
+	if err != nil {
+		panic(err)
+	}
+	if err := ioutil.WriteFile(output, data, 0600); err != nil {
+		panic(err)
+	}
+	emoji.Printf(":ok_hand: %s\n", output)
+}
+
+func commandDecrypt(conf libtf.YamlConf, vault libtf.Vault) {
+	output := flag.Arg(1)
+	data, err := yaml.Marshal(vault.Env)
+	if err != nil {
+		panic(err)
+	}
+	if err := ioutil.WriteFile(output, data, 0600); err != nil {
+		panic(err)
+	}
+	emoji.Printf(":ok_hand: %s\n", output)
+}
+
 func main() {
 	configFile := flag.String("config", ".tf.yml", "")
 	vaultFile := flag.String("vault", "env", "")
@@ -158,6 +183,7 @@ func main() {
 	if err := libtf.LoadYamlConf(*configFile, &conf); err != nil {
 		panic(err)
 	}
+
 	if err := conf.Validate(); err != nil {
 		panic(err)
 	}
@@ -168,11 +194,18 @@ func main() {
 	var err error
 	if *vaultFile == "env" {
 		err = conf.LoadEnv(&vault)
-	} else {
+	} else if strings.HasSuffix(*vaultFile, ".yml") {
+		err = conf.LoadYamlFile(*vaultFile, &vault)
+	} else if strings.HasSuffix(*vaultFile, ".vault") {
 		err = conf.LoadVault(*vaultFile, &vault)
+	} else {
+		panic("invalid vault filename")
 	}
 
 	if err != nil {
+		if os.IsNotExist(err) {
+			panic(err)
+		}
 		color.Red("%s", err)
 		os.Exit(1)
 	}
@@ -188,6 +221,10 @@ func main() {
 		commandCompose(conf, vault)
 	case "variables":
 		commandVariables(conf, vault)
+	case "encrypt":
+		commandEncrypt(conf, vault)
+	case "decrypt":
+		commandDecrypt(conf, vault)
 	default:
 
 		found := false
@@ -199,8 +236,8 @@ func main() {
 			}
 		}
 		if !found {
-			commands := strings.Join(append([]string{"run", "run-env", "dump", "compose"}, conf.Targets...), "|")
-			fmt.Printf("usage: tf -config=.tf.yml -vault=env|vault.yml %s\n", commands)
+			commands := strings.Join(append([]string{"run", "run-env", "dump", "compose", "variables", "encrypt", "decrypt"}, conf.Targets...), "|")
+			fmt.Printf("usage: tf -config=.tf.yml -vault=env|name.yml|name.vault %s\n", commands)
 			os.Exit(1)
 		}
 	}

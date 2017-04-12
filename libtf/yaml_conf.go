@@ -30,10 +30,12 @@ type yamlConfService struct {
 }
 
 type yamlConfGlobal struct {
-	BaseImage string `yaml:"base_image"`
+	BaseImage   string `yaml:"base_image"`
+	ProjectName string `yaml:"project_name"`
 }
 
 type YamlConf struct {
+	Keys          map[string]string
 	Global        yamlConfGlobal              `yaml:"global"`
 	Services      []yamlConfService           `yaml:"services"`
 	Env           map[string]yamlConfVariable `yaml:"env"`
@@ -63,34 +65,47 @@ func (a ByString) Less(i, j int) bool {
 	return strings.Compare(a[i], a[j]) == -1
 }
 
-func LoadYamlConf(filename string, config *YamlConf) error {
+func LoadYamlConf(filename string, conf *YamlConf) error {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	if err := yaml.Unmarshal(data, config); err != nil {
+	if err := yaml.Unmarshal(data, conf); err != nil {
 		return err
 	}
 	for _, name := range yamlConfDefaultEnv {
-		config.Env[name] = yamlConfVariable{
+		conf.Env[name] = yamlConfVariable{
 			Type: "string",
 		}
 	}
-	sortedEnvKeys := make([]string, len(config.Env))
+	sortedEnvKeys := make([]string, len(conf.Env))
 	idx := 0
-	for key := range config.Env {
+	for key := range conf.Env {
 		sortedEnvKeys[idx] = key
 		idx++
 	}
 	sort.Sort(ByString(sortedEnvKeys))
-	config.SortedEnvKeys = sortedEnvKeys
-	config.Targets = findTerraformTargets()
+	conf.SortedEnvKeys = sortedEnvKeys
+	conf.Targets = findTerraformTargets()
 	return nil
 }
 
 func (conf *YamlConf) Validate() error {
+
+	config := TfConfig{}
+	if err := LoadTfConfig(&config); err != nil {
+		return err
+	}
+	conf.Keys = config.Keys
+
 	if len(conf.Global.BaseImage) == 0 {
 		return errors.New("global.base_image is not defined")
+	}
+	if len(conf.Global.ProjectName) == 0 {
+		return errors.New("global.project_name is not defined")
+	}
+	if _, found := conf.Keys[conf.Global.ProjectName]; !found {
+		return fmt.Errorf("encryption key is not defined for project %s", conf.Global.ProjectName)
 	}
 
 	for index, service := range conf.Services {

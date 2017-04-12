@@ -3,5 +3,6 @@
 /tf/infra
 /tf/.tf.yml
 /tf/staging.yml
+/tf/staging.vault
 /tf/.compose.yml
 /tf/tf
