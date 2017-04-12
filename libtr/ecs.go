@@ -69,7 +69,7 @@ type EcsServiceConfig struct {
 func (service *yamlConfService) asEcs(baseImage string, vault Vault) EcsServiceConfig {
 	image := service.Image
 	if len(image) == 0 {
-		image = fmt.Sprintf("%s:%s", baseImage, getGitVersion())
+		image = fmt.Sprintf("%s:%s", baseImage, GetGitVersion())
 	}
 	portMappings := []ecsPortMapping{}
 	for _, port := range service.Ports {

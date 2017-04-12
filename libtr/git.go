@@ -8,9 +8,13 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-var gitVersion string
+var gitVersion = ""
 
-func getGitVersion() string {
+func GetGitVersion() string {
+	if len(gitVersion) != 0 {
+		return gitVersion
+	}
+
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Panicln(err)

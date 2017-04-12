@@ -83,6 +83,18 @@ func EnvKey(key string) string {
 	return fmt.Sprintf("TF_VAR_%s", key)
 }
 
+func StateKeyVar(target string) string {
+	return fmt.Sprintf("%s_state_key", target)
+}
+
+func StateKey(envName string, target string) string {
+	return fmt.Sprintf("%s-%s.tfstate", envName, target)
+}
+
+func EcsTemplateVar(service string) string {
+	return fmt.Sprintf("ecs_%s_template", service)
+}
+
 func (conf *YamlConf) LoadEnv(vault *Vault) error {
 	res := map[string]interface{}{}
 	for _, key := range conf.SortedEnvKeys {

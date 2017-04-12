@@ -56,7 +56,7 @@ func (service *yamlConfService) asCompose(baseImage string, vault Vault) compose
 	}
 	image := service.Image
 	if len(image) == 0 {
-		image = fmt.Sprintf("%s:%s", baseImage, getGitVersion())
+		image = fmt.Sprintf("%s:%s", baseImage, GetGitVersion())
 	}
 	return composeServiceConfig{
 		Image:       image,

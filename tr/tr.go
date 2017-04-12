@@ -109,14 +109,12 @@ func commandTerraform(conf libtr.YamlConf, vault libtr.Vault, target string) {
 		env[idx] = fmt.Sprintf("%s=%s", key, value)
 		idx++
 	}
-	for key := range services {
-		templateName := fmt.Sprintf("ecs_%s_template", key)
-		env[idx] = fmt.Sprintf("%s=.ecs-def/%s.json", libtr.EnvKey(templateName), key)
+	for service := range services {
+		env[idx] = fmt.Sprintf("%s=.ecs-def/%s.json", libtr.EnvKey(libtr.EcsTemplateVar(service)), service)
 		idx++
 	}
 	for _, target := range conf.Targets {
-		stateKey := fmt.Sprintf("%s_state_key", target)
-		env[idx] = fmt.Sprintf("%s=%s-%s.tfstate", libtr.EnvKey(stateKey), vault.EnvName(), target)
+		env[idx] = fmt.Sprintf("%s=%s", libtr.EnvKey(libtr.StateKeyVar(target)), libtr.StateKey(vault.EnvName(), target))
 		idx++
 	}
 	env[idx] = "TF_INPUT=0"
@@ -130,14 +128,12 @@ func commandVariables(conf libtr.YamlConf, vault libtr.Vault) {
 	services := map[string][]libtr.EcsServiceConfig{}
 	conf.AsEcs(vault, services)
 
-	for key := range services {
-		templateName := fmt.Sprintf("ecs_%s_template", key)
-		keys = append(keys, templateName)
+	for service := range services {
+		keys = append(keys, libtr.EcsTemplateVar(service))
 	}
 
 	for _, target := range conf.Targets {
-		stateKey := fmt.Sprintf("%s_state_key", target)
-		keys = append(keys, stateKey)
+		keys = append(keys, libtr.StateKeyVar(target))
 	}
 
 	for key, variable := range conf.Env {
@@ -165,6 +161,8 @@ func main() {
 	if err := conf.Validate(); err != nil {
 		panic(err)
 	}
+
+	libtr.GetGitVersion()
 
 	vault := libtr.Vault{}
 	var err error
