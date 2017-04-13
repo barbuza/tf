@@ -110,7 +110,7 @@ func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfi
 		Essential:         true,
 		Name:              service.Name,
 		Image:             image,
-		Command:           strings.Split(service.Command, ","),
+		Command:           strings.Split(service.Command, " "),
 		MemoryReservation: service.Memory,
 		PortMappings:      portMappings,
 		LogConfiguration:  logConfigration,
