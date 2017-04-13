@@ -20,11 +20,15 @@ func TestInt(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	res1 := envListToString([]string{"foo", "bar", "spam"})
+	res1, err1 := envListToString([]interface{}{"foo", "bar", "spam"})
+	assert.Nil(t, err1)
 	assert.Equal(t, "foo,bar,spam", res1)
 
+	_, err2 := envListToString([]interface{}{"foo", 1})
+	assert.Error(t, err2)
+
 	res3 := envStringToList("foo,bar,spam")
-	assert.Equal(t, []string{"foo", "bar", "spam"}, res3)
+	assert.Equal(t, []interface{}{"foo", "bar", "spam"}, res3)
 }
 
 func TestBool(t *testing.T) {
@@ -47,7 +51,7 @@ func TestDict(t *testing.T) {
 	data1 := map[string]interface{}{
 		"foo":  "test",
 		"bar":  1,
-		"spam": []string{"foo", "bar"},
+		"spam": []interface{}{"foo", "bar"},
 		"eggs": map[string]interface{}{
 			"foo":  "bar",
 			"spam": "eggs",

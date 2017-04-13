@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"errors"
+	"github.com/barbuza/tf/json_compat"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gtank/cryptopasta"
 	"gopkg.in/yaml.v2"
@@ -34,51 +35,6 @@ func (vault *Vault) AwsSecret() string {
 
 func (vault *Vault) stateBucket() string {
 	return vault.Env["tf_state_bucket"].(string)
-}
-
-func fixInterfacesInMap(input map[string]interface{}) {
-	for key, value := range input {
-		switch value.(type) {
-		case map[interface{}]interface{}:
-			input[key] = fixInterfaceMap(value.(map[interface{}]interface{}))
-		case []interface{}:
-			input[key] = fixInterfaceSlice(value.([]interface{}))
-		default:
-		}
-	}
-}
-
-func fixInterfaceSlice(input []interface{}) []string {
-	res := make([]string, len(input))
-	for idx, item := range input {
-		switch item.(type) {
-		case string:
-			res[idx] = item.(string)
-		default:
-			panic("list values must be strings")
-		}
-	}
-	return res
-}
-
-func fixInterfaceMap(input map[interface{}]interface{}) map[string]interface{} {
-	out := map[string]interface{}{}
-	for key, value := range input {
-		switch key.(type) {
-		case string:
-			switch value.(type) {
-			case map[interface{}]interface{}:
-				out[key.(string)] = fixInterfaceMap(value.(map[interface{}]interface{}))
-			case []interface{}:
-				out[key.(string)] = fixInterfaceSlice(value.([]interface{}))
-			default:
-				out[key.(string)] = value
-			}
-		default:
-			panic("can't parse non-string keys")
-		}
-	}
-	return out
 }
 
 func EnvKey(key string) string {
@@ -152,17 +108,21 @@ func (vault *Vault) Encode(keyString string) ([]byte, error) {
 }
 
 func (conf *HclConf) loadYamlData(vault *Vault, data []byte) error {
-	decoded := map[string]interface{}{}
+	decoded := map[interface{}]interface{}{}
 	if err := yaml.Unmarshal(data, &decoded); err != nil {
 		return err
 	}
 
-	fixInterfacesInMap(decoded)
+	fixed, fixErr := json_compat.ConvertMap(decoded)
+	if fixErr != nil {
+		return fixErr
+	}
+
 	res := map[string]interface{}{}
 
 	for _, key := range conf.SortedEnvKeys {
 		variable := conf.Env[key]
-		value, found := decoded[key]
+		value, found := fixed[key]
 		if !found && variable.Optional {
 			continue
 		}
@@ -193,7 +153,7 @@ func (conf *HclConf) loadYamlData(vault *Vault, data []byte) error {
 			}
 		case "list":
 			switch value.(type) {
-			case []string:
+			case []interface{}:
 				res[key] = value
 			default:
 				return fmt.Errorf("%s is not of type list", spew.Sdump(value))

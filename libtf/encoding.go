@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/barbuza/tf/json_compat"
 	"github.com/davecgh/go-spew/spew"
 	"gopkg.in/yaml.v2"
 	"strconv"
@@ -33,12 +34,26 @@ func envBoolToString(input bool) string {
 	return "no"
 }
 
-func envListToString(input []string) string {
-	return strings.Join(input, ",")
+func envListToString(input []interface{}) (string, error) {
+	res := make([]string, len(input))
+	for idx, value := range input {
+		switch value.(type) {
+		case string:
+			res[idx] = value.(string)
+		default:
+			return "", fmt.Errorf("unsupported list value %s", spew.Sdump(value))
+		}
+	}
+	return strings.Join(res, ","), nil
 }
 
-func envStringToList(input string) []string {
-	return strings.Split(input, ",")
+func envStringToList(input string) []interface{} {
+	s := strings.Split(input, ",")
+	res := make([]interface{}, len(s))
+	for idx, item := range s {
+		res[idx] = item
+	}
+	return res
 }
 
 func envStringToBool(input string) (bool, error) {
@@ -57,13 +72,12 @@ func envStringToDict(input string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var dict map[string]interface{}
+	var dict map[interface{}]interface{}
 	err = yaml.Unmarshal(data, &dict)
 	if err != nil {
 		return nil, err
 	}
-	fixInterfacesInMap(dict)
-	return dict, nil
+	return json_compat.ConvertMap(dict)
 }
 
 func structToEnv(input map[string]interface{}) (map[string]string, error) {
@@ -77,8 +91,12 @@ func structToEnv(input map[string]interface{}) (map[string]string, error) {
 			res[key] = envBoolToString(value.(bool))
 		case int:
 			res[key] = envIntToString(value.(int))
-		case []string:
-			res[key] = envListToString(value.([]string))
+		case []interface{}:
+			list, err := envListToString(value.([]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			res[key] = list
 		case map[string]interface{}:
 			dict, err := envDictToString(value.(map[string]interface{}))
 			if err != nil {
