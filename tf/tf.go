@@ -19,7 +19,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func commandRunEnv(conf libtf.YamlConf, vault libtf.Vault) {
+func commandRunEnv(conf libtf.HclConf, vault libtf.Vault) {
 	bin, err := exec.LookPath(flag.Arg(1))
 	if err != nil {
 		panic(err)
@@ -30,10 +30,10 @@ func commandRunEnv(conf libtf.YamlConf, vault libtf.Vault) {
 		env[idx] = fmt.Sprintf("%s=%s", key, value)
 		idx++
 	}
-	syscall.Exec(bin, flag.Args()[1:], append(os.Environ(), env...))
+	syscall.Exec(bin, flag.Args()[1:], append(env, os.Environ()...))
 }
 
-func commandRun(conf libtf.YamlConf, vault libtf.Vault) {
+func commandRun(conf libtf.HclConf, vault libtf.Vault) {
 	data, err := json.MarshalIndent(vault.Env, "", " ")
 	if err != nil {
 		panic(err)
@@ -43,10 +43,10 @@ func commandRun(conf libtf.YamlConf, vault libtf.Vault) {
 		panic(err)
 	}
 	env := fmt.Sprintf("TR_JSON=%s", string(data))
-	syscall.Exec(bin, flag.Args()[1:], append(os.Environ(), env))
+	syscall.Exec(bin, flag.Args()[1:], append([]string{env}, os.Environ()...))
 }
 
-func commandDump(conf libtf.YamlConf, vault libtf.Vault) {
+func commandDump(conf libtf.HclConf, vault libtf.Vault) {
 	data, err := json.MarshalIndent(vault.Env, "", "  ")
 	if err != nil {
 		panic(err)
@@ -54,7 +54,7 @@ func commandDump(conf libtf.YamlConf, vault libtf.Vault) {
 	io.Copy(os.Stdout, bytes.NewBuffer(data))
 }
 
-func commandCompose(conf libtf.YamlConf, vault libtf.Vault) {
+func commandCompose(conf libtf.HclConf, vault libtf.Vault) {
 	data, err := yaml.Marshal(conf.AsCompose(vault))
 	if err != nil {
 		panic(err)
@@ -69,7 +69,7 @@ func commandCompose(conf libtf.YamlConf, vault libtf.Vault) {
 	syscall.Exec(bin, append([]string{"docker-compose", "-f", ".compose.yml"}, flag.Args()[1:]...), os.Environ())
 }
 
-func commandTerraform(conf libtf.YamlConf, vault libtf.Vault, target string) {
+func commandTerraform(conf libtf.HclConf, vault libtf.Vault, target string) {
 	if err := os.Chdir(target); err != nil {
 		panic(err)
 	}
@@ -104,26 +104,23 @@ func commandTerraform(conf libtf.YamlConf, vault libtf.Vault, target string) {
 		panic(err)
 	}
 
-	env := make([]string, len(vault.Raw)+len(services)+len(conf.Targets)+1)
-	idx := 0
+	env := []string{}
 	for key, value := range vault.Raw {
-		env[idx] = fmt.Sprintf("%s=%s", key, value)
-		idx++
+		env = append(env, fmt.Sprintf("%s=%s", key, value))
 	}
 	for service := range services {
-		env[idx] = fmt.Sprintf("%s=.ecs-def/%s.json", libtf.EnvKey(libtf.EcsTemplateVar(service)), service)
-		idx++
+		env = append(env, fmt.Sprintf("%s=.ecs-def/%s.json", libtf.EnvKey(libtf.EcsTemplateVar(service)), service))
 	}
 	for _, target := range conf.Targets {
-		env[idx] = fmt.Sprintf("%s=%s", libtf.EnvKey(libtf.StateKeyVar(target)), libtf.StateKey(vault.EnvName(), target))
-		idx++
+		env = append(env, fmt.Sprintf("%s=%s", libtf.EnvKey(libtf.StateKeyVar(target)), libtf.StateKey(vault.EnvName(), target)))
 	}
-	env[idx] = "TF_INPUT=0"
+	//env = append(env, "TF_INPUT=0")
+	//env[idx] = "TF_INPUT=0"
 
-	syscall.Exec(terraformBin, append([]string{"terraform"}, flag.Args()[1:]...), append(os.Environ(), env...))
+	syscall.Exec(terraformBin, append([]string{"terraform"}, flag.Args()[1:]...), append(env, os.Environ()...))
 }
 
-func commandVariables(conf libtf.YamlConf, vault libtf.Vault) {
+func commandVariables(conf libtf.HclConf, vault libtf.Vault) {
 	keys := []string{}
 
 	services := map[string][]libtf.EcsServiceConfig{}
@@ -150,7 +147,7 @@ func commandVariables(conf libtf.YamlConf, vault libtf.Vault) {
 	}
 }
 
-func commandEncrypt(conf libtf.YamlConf, vault libtf.Vault) {
+func commandEncrypt(conf libtf.HclConf, vault libtf.Vault) {
 	output := flag.Arg(1)
 	data, err := vault.Encode(conf.Keys[conf.Global.ProjectName])
 	if err != nil {
@@ -162,7 +159,7 @@ func commandEncrypt(conf libtf.YamlConf, vault libtf.Vault) {
 	emoji.Printf(":ok_hand: %s\n", output)
 }
 
-func commandDecrypt(conf libtf.YamlConf, vault libtf.Vault) {
+func commandDecrypt(conf libtf.HclConf, vault libtf.Vault) {
 	output := flag.Arg(1)
 	data, err := yaml.Marshal(vault.Env)
 	if err != nil {
@@ -175,12 +172,13 @@ func commandDecrypt(conf libtf.YamlConf, vault libtf.Vault) {
 }
 
 func main() {
-	configFile := flag.String("config", ".tf.yml", "")
+	configFile := flag.String("config", ".tf.hcl", "")
 	vaultFile := flag.String("vault", "env", "")
 	flag.Parse()
 
-	conf := libtf.YamlConf{}
-	if err := libtf.LoadYamlConf(*configFile, &conf); err != nil {
+	conf := libtf.HclConf{}
+
+	if err := libtf.LoadHclConf(*configFile, &conf); err != nil {
 		panic(err)
 	}
 
@@ -237,7 +235,7 @@ func main() {
 		}
 		if !found {
 			commands := strings.Join(append([]string{"run", "run-env", "dump", "compose", "variables", "encrypt", "decrypt"}, conf.Targets...), "|")
-			fmt.Printf("usage: tf -config=.tf.yml -vault=env|name.yml|name.vault %s\n", commands)
+			fmt.Printf("usage: tf -config=.tf.hcl -vault=env|name.yml|name.vault %s\n", commands)
 			os.Exit(1)
 		}
 	}

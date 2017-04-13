@@ -7,43 +7,43 @@ import (
 	"sort"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/hashicorp/hcl"
 )
 
-type yamlConfVariable struct {
-	Type     string `yaml:"type"`
-	Optional bool   `yaml:"optional"`
+type hclConfVariable struct {
+	Type     string `hcl:"type"`
+	Optional bool   `hcl:"optional"`
 }
 
-type yamlConfService struct {
-	Name    string            `yaml:"name"`
-	Image   string            `yaml:"image"`
-	Ecs     string            `yaml:"ecs"`
-	Command string            `yaml:"command"`
-	Compose bool              `yaml:"compose"`
-	Memory  int               `yaml:"memory"`
-	NoEnv   bool              `yaml:"noenv"`
-	NoLog   bool              `yaml:"nolog"`
-	Env     map[string]string `yaml:"env"`
-	Links   []string          `yaml:"links"`
-	Ports   []int             `yaml:"ports"`
+type hclConfService struct {
+	Name    string            `hcl:"name"`
+	Image   string            `hcl:"image"`
+	Ecs     string            `hcl:"ecs"`
+	Command string            `hcl:"command"`
+	Compose bool              `hcl:"compose"`
+	Memory  int               `hcl:"memory"`
+	NoEnv   bool              `hcl:"noenv"`
+	NoLog   bool              `hcl:"nolog"`
+	Env     map[string]string `hcl:"env"`
+	Links   []string          `hcl:"links"`
+	Ports   []int             `hcl:"ports"`
 }
 
-type yamlConfGlobal struct {
-	BaseImage   string `yaml:"base_image"`
-	ProjectName string `yaml:"project_name"`
+type hclConfGlobal struct {
+	BaseImage   string `hcl:"base_image"`
+	ProjectName string `hcl:"project_name"`
 }
 
-type YamlConf struct {
+type HclConf struct {
 	Keys          map[string]string
-	Global        yamlConfGlobal              `yaml:"global"`
-	Services      []yamlConfService           `yaml:"services"`
-	Env           map[string]yamlConfVariable `yaml:"env"`
+	Global        hclConfGlobal              `hcl:"global"`
+	Services      map[string]hclConfService  `hcl:"service"`
+	Env           map[string]hclConfVariable `hcl:"env"`
 	Targets       []string
 	SortedEnvKeys []string
 }
 
-var yamlConfDefaultEnv = []string{
+var hclConfDefaultEnv = []string{
 	"env_name",
 	"aws_key",
 	"aws_secret",
@@ -65,16 +65,31 @@ func (a ByString) Less(i, j int) bool {
 	return strings.Compare(a[i], a[j]) == -1
 }
 
-func LoadYamlConf(filename string, conf *YamlConf) error {
+func LoadHclConf(filename string, conf *HclConf) error {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	if err := yaml.Unmarshal(data, conf); err != nil {
+	if err := hcl.Unmarshal(data, conf); err != nil {
 		return err
 	}
-	for _, name := range yamlConfDefaultEnv {
-		conf.Env[name] = yamlConfVariable{
+	for name, service := range conf.Services {
+		conf.Services[name] = hclConfService{
+			Name:    name,
+			Image:   service.Image,
+			Ecs:     service.Ecs,
+			Command: service.Command,
+			Compose: service.Compose,
+			Memory:  service.Memory,
+			NoEnv:   service.NoEnv,
+			NoLog:   service.NoLog,
+			Env:     service.Env,
+			Links:   service.Links,
+			Ports:   service.Ports,
+		}
+	}
+	for _, name := range hclConfDefaultEnv {
+		conf.Env[name] = hclConfVariable{
 			Type: "string",
 		}
 	}
@@ -90,7 +105,7 @@ func LoadYamlConf(filename string, conf *YamlConf) error {
 	return nil
 }
 
-func (conf *YamlConf) Validate() error {
+func (conf *HclConf) Validate() error {
 
 	config := TfConfig{}
 	if err := LoadTfConfig(&config); err != nil {

@@ -96,7 +96,7 @@ func EcsTemplateVar(service string) string {
 	return fmt.Sprintf("ecs_%s_template", service)
 }
 
-func (conf *YamlConf) LoadEnv(vault *Vault) error {
+func (conf *HclConf) LoadEnv(vault *Vault) error {
 	res := map[string]interface{}{}
 	for _, key := range conf.SortedEnvKeys {
 		variable := conf.Env[key]
@@ -150,7 +150,7 @@ func (vault *Vault) Encode(keyString string) ([]byte, error) {
 	return cryptopasta.Encrypt(data, &key)
 }
 
-func (conf *YamlConf) loadYamlData(vault *Vault, data []byte) error {
+func (conf *HclConf) loadYamlData(vault *Vault, data []byte) error {
 	decoded := map[string]interface{}{}
 	if err := yaml.Unmarshal(data, &decoded); err != nil {
 		return err
@@ -215,7 +215,7 @@ func (conf *YamlConf) loadYamlData(vault *Vault, data []byte) error {
 	return err
 }
 
-func (conf *YamlConf) LoadYamlFile(filename string, vault *Vault) error {
+func (conf *HclConf) LoadYamlFile(filename string, vault *Vault) error {
 	yamlBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func (conf *YamlConf) LoadYamlFile(filename string, vault *Vault) error {
 	return conf.loadYamlData(vault, yamlBytes)
 }
 
-func (conf *YamlConf) LoadVault(filename string, vault *Vault) error {
+func (conf *HclConf) LoadVault(filename string, vault *Vault) error {
 	aesBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err

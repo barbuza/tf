@@ -29,7 +29,7 @@ func mergeEnv(a map[string]string, b map[string]string) map[string]string {
 	return res
 }
 
-func (conf *YamlConf) AsCompose(vault Vault) ComposeConfig {
+func (conf *HclConf) AsCompose(vault Vault) ComposeConfig {
 	config := ComposeConfig{
 		Version:  "2",
 		Services: make(map[string]composeServiceConfig),
@@ -43,7 +43,7 @@ func (conf *YamlConf) AsCompose(vault Vault) ComposeConfig {
 	return config
 }
 
-func (service *yamlConfService) asCompose(baseImage string, vault Vault) composeServiceConfig {
+func (service *hclConfService) asCompose(baseImage string, vault Vault) composeServiceConfig {
 	serviceEnv := service.Env
 	if !service.NoEnv {
 		serviceEnv = mergeEnv(vault.Raw, serviceEnv)

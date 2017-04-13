@@ -66,7 +66,7 @@ type EcsServiceConfig struct {
 	LogConfiguration  *ecsLogConfiguration `json:"logConfiguration,omitempty"`
 }
 
-func (service *yamlConfService) asEcs(baseImage string, vault Vault) EcsServiceConfig {
+func (service *hclConfService) asEcs(baseImage string, vault Vault) EcsServiceConfig {
 	image := service.Image
 	if len(image) == 0 {
 		image = fmt.Sprintf("%s:%s", baseImage, GetGitVersion())
@@ -111,7 +111,7 @@ func (service *yamlConfService) asEcs(baseImage string, vault Vault) EcsServiceC
 	}
 }
 
-func (conf *YamlConf) AsEcs(vault Vault, services map[string][]EcsServiceConfig) {
+func (conf *HclConf) AsEcs(vault Vault, services map[string][]EcsServiceConfig) {
 	for _, service := range conf.Services {
 		if len(service.Ecs) == 0 {
 			continue
