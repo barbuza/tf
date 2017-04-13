@@ -16,7 +16,7 @@ type Vault struct {
 	Raw map[string]string
 }
 
-func (vault *Vault) awsRegion() string {
+func (vault *Vault) AwsRegion() string {
 	return vault.Env["aws_region"].(string)
 }
 
@@ -24,11 +24,11 @@ func (vault *Vault) EnvName() string {
 	return vault.Env["env_name"].(string)
 }
 
-func (vault *Vault) awsKey() string {
+func (vault *Vault) AwsKey() string {
 	return vault.Env["aws_key"].(string)
 }
 
-func (vault *Vault) awsSecret() string {
+func (vault *Vault) AwsSecret() string {
 	return vault.Env["aws_secret"].(string)
 }
 

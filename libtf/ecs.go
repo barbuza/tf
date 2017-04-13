@@ -85,7 +85,7 @@ func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfi
 			LogDriver: "awslogs",
 			Options: ecsLogOptions{
 				Group:  fmt.Sprintf("%s-%s", vault.EnvName(), service.Name),
-				Region: vault.awsRegion(),
+				Region: vault.AwsRegion(),
 			},
 		}
 	}

@@ -16,11 +16,11 @@ type ecsClient struct {
 }
 
 func newClient(vault Vault, logHttp bool) *ecsClient {
-	region := vault.awsRegion()
+	region := vault.AwsRegion()
 	envName := vault.EnvName()
 	sess, err := session.NewSession(&aws.Config{
 		Region:      &region,
-		Credentials: credentials.NewStaticCredentials(vault.awsKey(), vault.awsSecret(), ""),
+		Credentials: credentials.NewStaticCredentials(vault.AwsKey(), vault.AwsSecret(), ""),
 	})
 	if err != nil {
 		panic(err)

@@ -117,6 +117,12 @@ func commandTerraform(conf libtf.HclConf, vault libtf.Vault, target string) {
 	//env = append(env, "TF_INPUT=0")
 	//env[idx] = "TF_INPUT=0"
 
+	env = append(env, []string{
+		fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", vault.AwsKey()),
+		fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", vault.AwsSecret()),
+		fmt.Sprintf("AWS_DEFAULT_REGION=%s", vault.AwsRegion()),
+	}...)
+
 	syscall.Exec(terraformBin, append([]string{"terraform"}, flag.Args()[1:]...), append(env, os.Environ()...))
 }
 
