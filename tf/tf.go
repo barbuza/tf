@@ -175,9 +175,18 @@ func commandDecrypt(conf libtf.HclConf, vault libtf.Vault) {
 	emoji.Printf(":ok_hand: %s\n", output)
 }
 
+func commandRunEcsTask(conf libtf.HclConf, vault libtf.Vault, allInstances bool) {
+	if err := libtf.RunEcsTask(vault, flag.Arg(1), allInstances); err != nil {
+		panic(err)
+	}
+}
+
 func main() {
+
 	configFile := flag.String("config", ".tf.hcl", "")
 	vaultFile := flag.String("vault", "env", "")
+	allInstances := flag.Bool("all_instances", false, "")
+
 	flag.Parse()
 
 	conf := libtf.HclConf{}
@@ -217,6 +226,8 @@ func main() {
 		commandRun(conf, vault)
 	case "run-env":
 		commandRunEnv(conf, vault)
+	case "ecs-task":
+		commandRunEcsTask(conf, vault, *allInstances)
 	case "dump":
 		commandDump(conf, vault)
 	case "compose":
@@ -238,7 +249,7 @@ func main() {
 			}
 		}
 		if !found {
-			commands := strings.Join(append([]string{"run", "run-env", "dump", "compose", "variables", "encrypt", "decrypt"}, conf.Targets...), "|")
+			commands := strings.Join(append([]string{"run", "run-env", "dump", "ecs-task", "compose", "variables", "encrypt", "decrypt"}, conf.Targets...), "|")
 			fmt.Printf("usage: tf -config=.tf.hcl -vault=env|name.yml|name.vault %s\n", commands)
 			os.Exit(1)
 		}
