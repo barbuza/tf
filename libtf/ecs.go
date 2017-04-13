@@ -58,12 +58,12 @@ type EcsServiceConfig struct {
 	Image             string               `json:"image"`
 	Command           []string             `json:"command,omitempty"`
 	Links             []string             `json:"links,omitempty"`
-	DNSSearchDomains  string               `json:"dnsSearchDomains,omitempty"`
 	Environment       []ecsEnvVariable     `json:"environment,omitempty"`
 	Essential         bool                 `json:"essential"`
 	MemoryReservation int                  `json:"memoryReservation"`
 	PortMappings      []ecsPortMapping     `json:"portMappings,omitempty"`
 	LogConfiguration  *ecsLogConfiguration `json:"logConfiguration,omitempty"`
+	DNSSearchDomains  []string             `json:"dnsSearchDomains"`
 }
 
 func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfig {
@@ -116,6 +116,7 @@ func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfi
 		LogConfiguration:  logConfigration,
 		Environment:       env,
 		Links:             links,
+		DNSSearchDomains:  []string{"internal"},
 	}
 }
 
