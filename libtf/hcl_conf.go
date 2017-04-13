@@ -41,6 +41,7 @@ type HclConf struct {
 	Env           map[string]hclConfVariable `hcl:"env"`
 	Targets       []string
 	SortedEnvKeys []string
+	EcsServices   map[string]bool
 }
 
 var hclConfDefaultEnv = []string{
@@ -73,7 +74,11 @@ func LoadHclConf(filename string, conf *HclConf) error {
 	if err := hcl.Unmarshal(data, conf); err != nil {
 		return err
 	}
+	conf.EcsServices = map[string]bool{}
 	for name, service := range conf.Services {
+		if len(service.Ecs) != 0 {
+			conf.EcsServices[name] = true
+		}
 		conf.Services[name] = hclConfService{
 			Name:    name,
 			Image:   service.Image,

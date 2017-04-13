@@ -66,10 +66,10 @@ type EcsServiceConfig struct {
 	LogConfiguration  *ecsLogConfiguration `json:"logConfiguration,omitempty"`
 }
 
-func (service *hclConfService) asEcs(baseImage string, vault Vault) EcsServiceConfig {
+func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfig {
 	image := service.Image
 	if len(image) == 0 {
-		image = fmt.Sprintf("%s:%s", baseImage, GetGitVersion())
+		image = fmt.Sprintf("%s:%s", conf.Global.BaseImage, GetGitVersion())
 	}
 	portMappings := []ecsPortMapping{}
 	for _, port := range service.Ports {
@@ -99,6 +99,13 @@ func (service *hclConfService) asEcs(baseImage string, vault Vault) EcsServiceCo
 		}
 		sort.Sort(byEcsEnvName(env))
 	}
+	links := []string{}
+	for _, name := range service.Links {
+		_, found := conf.EcsServices[name]
+		if found {
+			links = append(links, name)
+		}
+	}
 	return EcsServiceConfig{
 		Essential:         true,
 		Name:              service.Name,
@@ -108,6 +115,7 @@ func (service *hclConfService) asEcs(baseImage string, vault Vault) EcsServiceCo
 		PortMappings:      portMappings,
 		LogConfiguration:  logConfigration,
 		Environment:       env,
+		Links:             links,
 	}
 }
 
@@ -120,6 +128,6 @@ func (conf *HclConf) AsEcs(vault Vault, services map[string][]EcsServiceConfig) 
 		if !ok {
 			services[service.Ecs] = []EcsServiceConfig{}
 		}
-		services[service.Ecs] = append(services[service.Ecs], service.asEcs(conf.Global.BaseImage, vault))
+		services[service.Ecs] = append(services[service.Ecs], service.asEcs(conf, vault))
 	}
 }
