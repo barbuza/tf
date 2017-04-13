@@ -149,7 +149,11 @@ func commandVariables(conf libtf.HclConf, vault libtf.Vault) {
 
 func commandEncrypt(conf libtf.HclConf, vault libtf.Vault) {
 	output := flag.Arg(1)
-	data, err := vault.Encode(conf.Keys[conf.Global.ProjectName])
+	keyString := conf.Keys[conf.Global.ProjectName]
+	if len(keyString) == 0 {
+		panic("no key found in ~/.tfrc")
+	}
+	data, err := vault.Encode(keyString)
 	if err != nil {
 		panic(err)
 	}

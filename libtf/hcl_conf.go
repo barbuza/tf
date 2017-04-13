@@ -113,19 +113,17 @@ func LoadHclConf(filename string, conf *HclConf) error {
 func (conf *HclConf) Validate() error {
 
 	config := TfConfig{}
-	if err := LoadTfConfig(&config); err != nil {
-		return err
+	if err := LoadTfConfig(&config); err == nil {
+		conf.Keys = config.Keys
+	} else {
+		conf.Keys = map[string]string{}
 	}
-	conf.Keys = config.Keys
 
 	if len(conf.Global.BaseImage) == 0 {
 		return errors.New("global.base_image is not defined")
 	}
 	if len(conf.Global.ProjectName) == 0 {
 		return errors.New("global.project_name is not defined")
-	}
-	if _, found := conf.Keys[conf.Global.ProjectName]; !found {
-		return fmt.Errorf("encryption key is not defined for project %s", conf.Global.ProjectName)
 	}
 
 	for index, service := range conf.Services {

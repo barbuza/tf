@@ -1,10 +1,11 @@
 package libtf
 
 import (
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"os"
-	"fmt"
+	"os/user"
+	"path"
 )
 
 type TfConfig struct {
@@ -12,7 +13,11 @@ type TfConfig struct {
 }
 
 func LoadTfConfig(config *TfConfig) error {
-	data, err := ioutil.ReadFile(os.ExpandEnv("/Users/barbuza/.tfrc"))
+	currentUser, err := user.Current()
+	if err != nil {
+		return nil
+	}
+	data, err := ioutil.ReadFile(path.Join(currentUser.HomeDir, ".tfrc"))
 	if err != nil {
 		return err
 	}

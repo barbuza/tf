@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gtank/cryptopasta"
 	"gopkg.in/yaml.v2"
@@ -229,7 +230,11 @@ func (conf *HclConf) LoadVault(filename string, vault *Vault) error {
 		return err
 	}
 	key := [32]byte{}
-	copy(key[:], conf.Keys[conf.Global.ProjectName])
+	keyString := conf.Keys[conf.Global.ProjectName]
+	if len(keyString) == 0 {
+		return errors.New("no key found in ~/.tfrc")
+	}
+	copy(key[:], keyString)
 	yamlBytes, err := cryptopasta.Decrypt(aesBytes, &key)
 	if err != nil {
 		return err
