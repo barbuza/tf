@@ -97,6 +97,12 @@ func (service *hclConfService) asEcs(conf *HclConf, vault Vault) EcsServiceConfi
 				Value: value,
 			})
 		}
+		for key, value := range service.Env {
+			env = append(env, ecsEnvVariable{
+				Name:  key,
+				Value: value,
+			})
+		}
 		sort.Sort(byEcsEnvName(env))
 	}
 	links := []string{}
