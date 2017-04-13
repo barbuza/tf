@@ -93,6 +93,14 @@ func LoadHclConf(filename string, conf *HclConf) error {
 			Ports:   service.Ports,
 		}
 	}
+	for name, variable := range conf.Env {
+		if len(variable.Type) == 0 {
+			conf.Env[name] = hclConfVariable{
+				Type:     "string",
+				Optional: variable.Optional,
+			}
+		}
+	}
 	for _, name := range hclConfDefaultEnv {
 		conf.Env[name] = hclConfVariable{
 			Type: "string",

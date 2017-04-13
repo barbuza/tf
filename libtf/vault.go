@@ -201,3 +201,8 @@ func (conf *HclConf) LoadVault(filename string, vault *Vault) error {
 	}
 	return conf.loadYamlData(vault, yamlBytes)
 }
+
+func (vault *Vault) AddDefaults() {
+	vault.Raw["git_version"] = GetGitVersion()
+	vault.Env["git_version"] = GetGitVersion()
+}

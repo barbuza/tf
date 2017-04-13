@@ -219,6 +219,8 @@ func main() {
 		panic("invalid vault filename")
 	}
 
+	vault.AddDefaults()
+
 	if err != nil {
 		if os.IsNotExist(err) {
 			panic(err)
