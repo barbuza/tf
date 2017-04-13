@@ -15,6 +15,12 @@ func GetGitVersion() string {
 		return gitVersion
 	}
 
+	envVersion, found := os.LookupEnv("FORCE_GIT_REV")
+	if found {
+		gitVersion = envVersion
+		return gitVersion
+	}
+
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Panicln(err)
