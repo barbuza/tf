@@ -219,8 +219,6 @@ func main() {
 		panic("invalid vault filename")
 	}
 
-	vault.AddDefaults()
-
 	if err != nil {
 		if os.IsNotExist(err) {
 			panic(err)
@@ -228,6 +226,8 @@ func main() {
 		color.Red("%s", err)
 		os.Exit(1)
 	}
+
+	vault.AddDefaults()
 
 	switch flag.Arg(0) {
 	case "run":
