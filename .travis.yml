@@ -1,4 +1,18 @@
 language: go
 
 go:
-  - 1.8.1
+- 1.8.1
+
+before_deploy:
+- cd tf && go build
+
+deploy:
+  provider: s3
+  access_key_id: AKIAJ35DW5QJXVGGVMQA
+  secret_access_key:
+    secure: sBIZxrz5FnrZbyXtxzdnXSvYHLSiz+b/6f11FNAsI7f2+5JUqIEYRTf2g3KJzNdKQq7p1aMc1c6xuhV9wk5XP/PppCOibbiKHWKdnecNNYB9cwzSM3vm7YF+2KEVXAIEnowFgKPiZIEYHRBs3hhISnomquvi33GR8P6n5RQvkzLtnzV1r4qEQFdGrzmLdzfnwe7q8hGQdEOPFzpWJx6Yw97mMVWiu84sKA9tGBkDQXo0Dx+h+91gnAQjxMOPypxW1cduDQQSQzrkEplTQP+uk2vSJ6PuFw5NU9N5ym5/XoUMSdc00BwTvfTQ2J2Y9kQkYuuzjyvHhhu4n/GivP/ajcFcRv4mFegzzhdOnxH+XJqVGWn5MvSPYir3+6Z+2QWuPrKttRXoUiL5QWvUfIw4/y/yqbXwknAJeaA2HDCnDCcVhjWhknuhH6h0Z1rYgv+aikWCk/TYSs7ctBjOQ3O0sOy46H9TfxP42GEFsfTlbQyJ5CASAaCfCYkT1Sw86GCcagA90xHRdqgdNyD7KFDGXBJYCwKh1n3ZXoEcjjZj6R+XApDwvJZtzCbsJ1+03ez7VhXz9NmH2EDLnO9Ma/ISNKgfyCIDNlTzEM6YhMmuZRIlrtLpYX5lHxYp9AhtTmDhcyXW4u0pwU3BvIt4nIHXoUQ3Ls0r+pvee5ZodMPIwVE=
+  bucket: tf-releases
+  acl: public_read
+  file: tf/tf
+  on:
+    repo: barbuza/tf
