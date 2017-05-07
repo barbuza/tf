@@ -5,9 +5,9 @@ go:
 
 script:
 - go test -v ./...
-- cd tf && go build
 - mkdir build
-- mv tf/tf build/
+- cd build
+- go build github.com/barbuza/tf/tf
 
 deploy:
   provider: s3
