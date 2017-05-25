@@ -32,19 +32,27 @@ func TestList(t *testing.T) {
 }
 
 func TestBool(t *testing.T) {
-	assert.Equal(t, "yes", envBoolToString(true))
-	assert.Equal(t, "no", envBoolToString(false))
+	assert.Equal(t, "true", envBoolToString(true))
+	assert.Equal(t, "false", envBoolToString(false))
 
 	res1, err1 := envStringToBool("yes")
 	assert.Nil(t, err1)
 	assert.True(t, res1)
 
-	res2, err2 := envStringToBool("no")
+	res2, err2 := envStringToBool("true")
 	assert.Nil(t, err2)
-	assert.False(t, res2)
+	assert.True(t, res2)
 
-	_, err3 := envStringToBool("foo")
-	assert.Error(t, err3)
+	res3, err3 := envStringToBool("no")
+	assert.Nil(t, err3)
+	assert.False(t, res3)
+
+	res4, err4 := envStringToBool("false")
+	assert.Nil(t, err4)
+	assert.False(t, res4)
+
+	_, err5 := envStringToBool("foo")
+	assert.Error(t, err5)
 }
 
 func TestDict(t *testing.T) {

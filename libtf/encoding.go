@@ -29,9 +29,9 @@ func envDictToString(input map[string]interface{}) (string, error) {
 
 func envBoolToString(input bool) string {
 	if input {
-		return "yes"
+		return "true"
 	}
-	return "no"
+	return "false"
 }
 
 func envListToString(input []interface{}) (string, error) {
@@ -60,6 +60,10 @@ func envStringToBool(input string) (bool, error) {
 	switch input {
 	case "yes":
 		return true, nil
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
 	case "no":
 		return false, nil
 	default:
