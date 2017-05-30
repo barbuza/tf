@@ -98,7 +98,8 @@ func (conf *HclConf) LoadEnv(vault *Vault) error {
 }
 
 func (vault *Vault) Encode(keyString string) ([]byte, error) {
-	data, err := yaml.Marshal(vault.Env)
+	noDefaults := vault.WithoutDefaults()
+	data, err := yaml.Marshal(noDefaults.Env)
 	if err != nil {
 		return nil, err
 	}
@@ -205,4 +206,26 @@ func (conf *HclConf) LoadVault(filename string, vault *Vault) error {
 func (vault *Vault) AddDefaults() {
 	vault.Raw["git_version"] = GetGitVersion()
 	vault.Env["git_version"] = GetGitVersion()
+}
+
+func (vault *Vault) WithoutDefaults() *Vault {
+	var env map[string]interface{} = make(map[string]interface{}, len(vault.Env))
+	var raw map[string]string = make(map[string]string, len(vault.Raw))
+	for key := range vault.Env {
+		switch key {
+		case "git_version":
+			continue
+		default:
+			env[key] = vault.Env[key]
+		}
+	}
+	for key := range vault.Raw {
+		switch key {
+		case "git_version":
+			continue
+		default:
+			raw[key] = vault.Raw[key]
+		}
+	}
+	return &Vault{Env: env, Raw: raw}
 }

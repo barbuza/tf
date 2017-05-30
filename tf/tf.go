@@ -171,7 +171,8 @@ func commandEncrypt(conf libtf.HclConf, vault libtf.Vault) {
 
 func commandDecrypt(conf libtf.HclConf, vault libtf.Vault) {
 	output := flag.Arg(1)
-	data, err := yaml.Marshal(vault.Env)
+	noDefaults := vault.WithoutDefaults()
+	data, err := yaml.Marshal(noDefaults.Env)
 	if err != nil {
 		panic(err)
 	}
